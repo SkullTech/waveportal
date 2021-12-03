@@ -7,20 +7,14 @@ const main = async () => {
     console.log("Contract deployed to:", waveContract.address);
     console.log("Contract deployed by:", owner.address);
 
-    let waveCount;
-    waveCount = await waveContract.getTotalWaves();
-
-    let waveTxn = await waveContract.wave();
+    let waveTxn = await waveContract.wave("Testing :3");
     await waveTxn.wait();
-    waveCount = await waveContract.getTotalWaves();
 
-    waveTxn = await waveContract.wave();
+    waveTxn = await waveContract.connect(randomPerson).wave("hi from a stranger!");
     await waveTxn.wait();
-    waveCount = await waveContract.getTotalWaves();
 
-    waveTxn = await waveContract.connect(randomPerson).wave();
-    await waveTxn.wait();
-    waveCount = await waveContract.getTotalWaves();
+    let allWaves = await waveContract.getWaves();
+    console.log(allWaves);
 };
 
 const runMain = async () => {
