@@ -8,7 +8,7 @@ export default function App() {
   const [totalWaves, setTotalWaves] = useState(0);
   const [message, setMessage] = useState("");
   const [waves, setWaves] = useState([]);
-  const contractAddress = "0x552ac03C6dA04B14F871Bd0c9912Eb90Dec90e5f";
+  const contractAddress = "0x7D627669312929C362274aF53b37a86aF473cafc";
   const contractABI = abi.abi;
 
   const checkIfWalletIsConnected = async () => {
@@ -60,7 +60,7 @@ export default function App() {
         let count = await wavePortalContract.getWaveCount();
         console.log("Retrieved total count:", count.toNumber());
 
-        const waveTxn = await wavePortalContract.wave(message);
+        const waveTxn = await wavePortalContract.wave(message, { gasLimit: 300000 });
         setMessage("");
         console.log("Mining...", waveTxn.hash);
 
@@ -113,6 +113,37 @@ export default function App() {
     checkIfWalletIsConnected();
     getWaves();
   }, []);
+
+  useEffect(() => {
+    let wavePortalContract;
+    
+    const onNewWave = (from, timestamp, message) => {
+      console.log("NewWave received", from, timestamp, message);
+      setWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: message
+        },
+      ])
+    };
+
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+      wavePortalContract.on("NewWave", onNewWave);
+    }
+
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off("NewWave", onNewWave);
+      }
+    }
+  }, []);
+
   
   return (
     <div className="mainContainer">
@@ -141,6 +172,10 @@ export default function App() {
           Connect Wallet
           </button>
         )}
+
+        <ul>
+          {waves.map((wave) => <li>{wave.address} said: {wave.message}</li>)}
+        </ul>
       </div>
     </div>
   );
